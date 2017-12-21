@@ -1,0 +1,18 @@
+{
+  "name": "catenis-api-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "MJ",
+  "license": "ISC",
+  "dependencies": {
+    "heir": "^3.0.0",
+    "moment": "^2.20.1",
+    "request": "^2.83.0",
+    "sjcl": "^1.0.7",
+    "ssl-root-cas": "^1.2.4"
+  }
+}
