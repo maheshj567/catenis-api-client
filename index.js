@@ -450,7 +450,7 @@ function postRequest(methodPath, params, data, result) {
             return result.error(err, 'error');
         }
         result.success(body, 'success');
-    })
+    });
 }
 
 function getRequest(methodPath, params, result) {
@@ -470,11 +470,12 @@ function getRequest(methodPath, params, result) {
 
     reqParams.headers = signParams.headers;
 
-    //_jQuery.ajax(reqParams);
-    _http.get(reqParams, function (err, res, body) {
-        console.log(err);
-        console.log(body);
-    })
+    _http.post(reqParams, function (err, res, body) {
+        if (err) {
+            return result.error(err, 'error');
+        }
+        result.success(body, 'success');
+    });
 }
 
 function signRequest(reqParams) {
