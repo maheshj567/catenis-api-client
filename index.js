@@ -1,11 +1,6 @@
-/*
-* @Author: mahesh
-* @Date:   2017-12-20 20:48:11
-*/
-
 // Save local reference to required third-party libraries
 var _moment = require('moment'),
-	_sjcl = require('sjcl'),
+	_crypto = require('crypto'),
 	_heir = require('heir'),
     _EventEmitter = require('events'),
     _http = require('request');
@@ -435,34 +430,54 @@ ApiClient.prototype.createWsNotifyChannel = function (eventName) {
 function postRequest(methodPath, params, data, result) {
     var reqParams = {
         url: this.rootApiEndPoint + '/' + formatMethodPath(methodPath, params),
-        contentType: "application/json",
-        processData: false,
-        data: JSON.stringify(data),
-        type: "POST",
-        success: result.success,
-        error: result.error
+        body: data,
+        json: true,
+        strictSSL: false
     };
 
-    signRequest.call(this, reqParams);
+    var signParams = {
+        url: reqParams.url,
+        type: 'POST',
+        data: JSON.stringify(data)
+    };
 
-    _jQuery.ajax(reqParams);
+    signRequest.call(this, signParams);
+
+    reqParams.headers = signParams.headers;
+
+    _http.post(reqParams, function (err, res, body) {
+        if (err) {
+            return result.error(err, 'error');
+        }
+        result.success(body, 'success');
+    })
 }
 
 function getRequest(methodPath, params, result) {
     var reqParams = {
         url: this.rootApiEndPoint + '/' + formatMethodPath(methodPath, params),
         type: "GET",
-        success: result.success,
-        error: result.error
+        json: true,
+        strictSSL: false
     };
 
-    signRequest.call(this, reqParams);
+    var signParams = {
+        url: reqParams.url,
+        type: 'GET'
+    };
 
-    _jQuery.ajax(reqParams);
+    signRequest.call(this, signParams);
+
+    reqParams.headers = signParams.headers;
+
+    //_jQuery.ajax(reqParams);
+    _http.get(reqParams, function (err, res, body) {
+        console.log(err);
+        console.log(body);
+    })
 }
 
 function signRequest(reqParams) {
-    console.log(reqParams);
     // Add timestamp header
     var now = _moment();
     var timestamp = _moment.utc(now).format('YYYYMMDDTHHmmss[Z]');
@@ -523,14 +538,11 @@ function signRequest(reqParams) {
 }
 
 function hashData(data) {
-    return _sjcl.codec.hex.fromBits(_sjcl.hash.sha256.hash(data));
+    return _crypto.createHash('sha256').update(data).digest('hex');
 }
 
 function signData(data, secret, hexEncode) {
-    var key = typeof secret === 'string' ? _sjcl.codec.utf8String.toBits(secret) : secret;
-    var result = (new _sjcl.misc.hmac(key)).encrypt(data);
-
-    return hexEncode ? _sjcl.codec.hex.fromBits(result) : result;
+    return _crypto.createHmac('sha256', secret).update(data).digest(hexEncode ? 'hex' : undefined);
 }
 
 function formatMethodPath(methodPath, params) {
