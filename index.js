@@ -446,8 +446,22 @@ function postRequest(methodPath, params, data, result) {
     reqParams.headers = signParams.headers;
 
     _http.post(reqParams, function (err, res, body) {
-        if (err) {
-            return result.error(err, 'error');
+        if (err || res.statusCode !== 200) {
+            var errorMessage = res.statusMessage;
+            console.log(errorMessage);
+            if (body.message) {
+                errorMessage = body.message;
+            }
+            console.log(errorMessage);
+            var error = err ? {
+                clientError: err
+            } : {
+                apiError: {
+                    httpStatusCode: res.statusCode,
+                    message: errorMessage
+                }
+            };
+            return result.error(error, 'error');
         }
         result.success(body, 'success');
     });
@@ -470,9 +484,21 @@ function getRequest(methodPath, params, result) {
 
     reqParams.headers = signParams.headers;
 
-    _http.post(reqParams, function (err, res, body) {
-        if (err) {
-            return result.error(err, 'error');
+    _http.get(reqParams, function (err, res, body) {
+        if (err || res.statusCode !== 200) {
+            var errorMessage = res.statusMessage;
+            if (body.message) {
+                errorMessage = body.message;
+            }
+            var error = err ? {
+                clientError: err
+            } : {
+                apiError: {
+                    httpStatusCode: res.statusCode,
+                    message: errorMessage
+                }
+            };
+            return result.error(error, 'error');
         }
         result.success(body, 'success');
     });
