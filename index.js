@@ -3,7 +3,8 @@ var _moment = require('moment'),
 	_crypto = require('crypto'),
 	_heir = require('heir'),
     _EventEmitter = require('events'),
-    _http = require('request');
+    _http = require('request'),
+    _WebSocket = require('ws');
 
 var apiPath = '/api/',
     signVersionId = 'CTN1',
@@ -448,11 +449,9 @@ function postRequest(methodPath, params, data, result) {
     _http.post(reqParams, function (err, res, body) {
         if (err || res.statusCode !== 200) {
             var errorMessage = res.statusMessage;
-            console.log(errorMessage);
             if (body.message) {
                 errorMessage = body.message;
             }
-            console.log(errorMessage);
             var error = err ? {
                 clientError: err
             } : {
@@ -626,11 +625,11 @@ WsNotifyChannel.prototype.open = function (cb) {
         //        has no authentication info) is created and sent by the WebSocket object
         var wsReq = getSignedWsConnectRequest.call(this);
 
-        this.ws = new WebSocket(wsReq.url, notifyWsSubprotocol);
+        this.ws = new _WebSocket(wsReq.url, [notifyWsSubprotocol]);
 
         var self = this;
 
-        this.ws.addEventListener('open', function (open) {
+        this.ws.on('open', function (open) {
             // Send authentication message
             var authMsgData = {};
 
@@ -645,8 +644,8 @@ WsNotifyChannel.prototype.open = function (cb) {
             }
         });
 
-        this.ws.addEventListener('error', function (error) {
-            if (this.readyState === WebSocket.CONNECTING) {
+        this.ws.on('error', function (error) {
+            if (this.readyState === _WebSocket.CONNECTING) {
                 // Error while trying to open WebSocket connection
                 if (typeof cb === 'function') {
                     // Call callback passing the error
@@ -660,14 +659,14 @@ WsNotifyChannel.prototype.open = function (cb) {
                 // Emit error event
                 self.emit('error', [error]);
 
-                if (this.readyState !== WebSocket.CLOSING && this.readyState !== WebSocket.CLOSED) {
+                if (this.readyState !== _WebSocket.CLOSING && this.readyState !== _WebSocket.CLOSED) {
                     // Close the connection
                     this.close(1011);
                 }
             }
         });
 
-        this.ws.addEventListener('close', function (close) {
+        this.ws.on('close', function (close) {
             // Emit close event
             self.emit('close', [close.code, close.reason]);
 
@@ -675,16 +674,16 @@ WsNotifyChannel.prototype.open = function (cb) {
             self.ws = undefined;
         });
 
-        this.ws.addEventListener('message', function (message) {
+        this.ws.on('message', function (message) {
             // Emit message event passing the received data
-            self.emit('message', [message.data]);
+            self.emit('message', message);
         });
     }
 };
 
 WsNotifyChannel.prototype.close = function () {
     // Make sure that WebSocket is instantiated and open
-    if (this.ws !== undefined && this.ws.readyState === WebSocket.OPEN) {
+    if (this.ws !== undefined && this.ws.readyState === _WebSocket.OPEN) {
         // Close the WebSocket connection
         this.ws.close(1000);
     }
