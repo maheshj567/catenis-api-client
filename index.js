@@ -485,18 +485,16 @@ function getRequest(methodPath, params, result) {
 
     _http.get(reqParams, function (err, res, body) {
         if (err || res.statusCode !== 200) {
-            var errorMessage = res.statusMessage;
-            if (body.message) {
-                errorMessage = body.message;
+            var error = {};
+            if (err) {
+                error.clientError = err;
             }
-            var error = err ? {
-                clientError: err
-            } : {
-                apiError: {
+            else {
+                error.apiError = {
                     httpStatusCode: res.statusCode,
-                    message: errorMessage
-                }
-            };
+                    message: body.message ? body.message : res.statusMessage
+                };
+            }
             return result.error(error, 'error');
         }
         result.success(body, 'success');
